@@ -1,0 +1,73 @@
+body{
+    width:100%;
+    margin: 0 auto;
+}
+
+pre {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    overflow:auto;
+}
+
+div {
+    word-wrap: break-word;
+}
+
+table{
+    table-layout:fixed;
+}
+
+textarea {
+    width:100%;
+}
+
+textarea#id_description{
+    height:100px;
+}
+
+textarea#id_input{
+    height:60%;
+}
+
+div.modal-body table{
+    width:100%;
+}
+
+div.modal-body th{
+    width:20%;
+}
+
+div.modal-body input[type="text"] {
+    width:100%;
+}
+
+div.modal-dialog {
+    width: 50%;
+}
+
+div.modal-content {
+    width: 100%;
+}
+
+form.create_form select[multiple]{
+    //width:100%;
+    height:100px;
+}
+
+form.add_form select[multiple]{
+    width:100%;
+    height:200px;
+}
+
+div#network {
+    border: 1px solid lightgray;
+}
+
+a.box{
+    color:white;
+}
+
+label{
+    vertical-align:top;
+    margin-left:10px;
+}

@@ -1,0 +1,614 @@
+{% extends "base_view.html" %}
+{% block title %}<title>Parsed Result: {{bundle.objects|length}} objects</title>{% endblock %}
+
+{% block datatableslib %}{% endblock %}{% block visjslib %}{% endblock %}
+{% block jquery %}
+<link rel="stylesheet" type="text/css" href="/static/stixviz/app.css" /> 
+<script>
+function detachObject(){
+    var id = [];
+    $("input.object_id:checked").each(function(){
+        id.push($(this).val());
+    });
+    if(id){
+        $.ajax({
+            type: 'POST',
+            data: {
+                detach: id,
+                csrfmiddlewaretoken:'{{csrf_token}}',
+            },
+            success: function(html){
+                setTimeout(function(html){
+                    location.reload(true);
+                },1000);
+            }
+        });
+    };
+};
+function datePicker(){
+        $('input#id_published').datetimepicker({format:'Y-m-d H:i'});
+        $('input#id_first_seen').datetimepicker({format:'Y-m-d H:i'});
+        $('input#id_last_seen').datetimepicker({format:'Y-m-d H:i'});
+};
+$(document).ready(
+    function(){
+        $("select#id_relation").change(function(){
+            var parent = $(this).parent();
+            var data = {
+                csrfmiddlewaretoken:'{{csrf_token}}',
+            };
+            if (parent.is("div#select_rel")){
+                data["select_rel"] = $(this).val();
+            } else if (parent.is("div#select_dr")){
+                data["select_dr"] = $(this).val();
+            } else if (parent.is("div#select_add")){
+                data["select_add"] = $(this).val();
+            };
+            //console.log(data);
+            $.ajax({
+                type: 'POST',
+                data: data,
+                success: function(result){
+                    if (parent.is("div#select_rel")){
+                        rform = $(result).find("#add_obj");
+                        $("#add_obj").replaceWith(rform);
+                    }else if (parent.is("div#select_add")){
+                        rform = $(result).find("#add_obj");
+                        $("#add_obj").replaceWith(rform);
+                    }else if (parent.is("div#select_dr")){
+                        cform = $(result).find("#create_object");
+                        $("#create_object").replaceWith(cform);
+                    };
+                    datePicker();
+                }
+            });
+        });
+        $("select#id_type").change(function(){
+            var parent = $(this).parent();
+            //console.log(parent);
+            $.ajax({
+                type: 'POST',
+                data: {
+                    select_type:$(this).val(),
+                    csrfmiddlewaretoken:'{{csrf_token}}',
+                },
+                success: function(result){
+                    if (parent.is("div#select_create")){
+                        cform = $(result).find("#create_object");
+                        $("#create_object").replaceWith(cform);
+                    }else if (parent.is("div#select_rel")){
+                        aform = $(result).find("#add_obj");
+                        $("#add_obj").replaceWith(aform);
+                    }else if (parent.is("div#select_type")){
+                        aform = $(result).find("#add_obj");
+                        console.log(aform);
+                        $("#add_obj").replaceWith(aform);
+                    }else if (parent.is("div#select_bulk")){
+                        bform = $(result).find("#bulk_create");
+                        $("#bulk_create").replaceWith(bform);
+                    }else if (parent.is("div#filter")){
+                        table = $(result).find("tbody#objects_table");
+                        console.log(table);
+                        $("tbody#objects_table").replaceWith(table);
+                    };
+                    datePicker();
+                }
+            });
+        });
+        datePicker();
+        Tablesort(document.getElementById('obj_table'));
+        Tablesort(document.getElementById('obs_table'));
+        Tablesort(document.getElementById('rel_table'));
+        Tablesort(document.getElementById('sight_table'));
+    }
+);
+</script>
+{% endblock%}
+{% block container %}
+
+{% if user.is_authenticated %}
+{% block modal_delete %}
+<div class="modal" id="delete_form" role="dialog">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Delete</h4>
+</div>
+<div class="modal-body">
+<h3>Are you sure?</h3>
+<form method="post">{% csrf_token %}
+<button class="btn btn-md btn-primary" data-dismiss="modal">No, Close</button>
+<input class="btn btn-md btn-danger" type="submit" name="delete" value="Yes, Delete">
+</form>
+</div><!--/.modal-body-->
+</div><!--/.modal-content-->
+</div><!--/.modal-dialog-->
+</div><!--/.modal-->
+{% endblock %}
+
+{% block modal_bulk %}
+<div class="modal" id="bulk_form" role="dialog">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Bulk Create</h4>
+</div>
+<div class="modal-body">
+<form method="post">{% csrf_token %}
+<div id="select_bulk">{{soform.as_table}}</div>
+<div id="bulk_create">{{obform}}</div>
+{{bform}}
+<input class="btn btn-primary btn-sm" type="submit" name="create_bulk" value="Create">
+</form>
+</div><!--/.modal-body-->
+</div><!--/.modal-content-->
+</div><!--/.modal-dialog-->
+</div><!--/.modal-->
+{% endblock %}
+
+{% block modal_sight %}
+<div class="modal" id="sight_form" role="dialog">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Add Sighting</h4>
+</div>
+<div class="modal-body">
+<form class="sight_form" method="post">{% csrf_token %}
+<table class="table">
+{{asform.as_table}}
+</table>
+<input class="btn btn-primary btn-sm" type="submit" name="add_sight" value="Add">
+</form>
+</div><!--/.modal-body-->
+</div><!--/.modal-content-->
+</div><!--/.modal-dialog-->
+</div><!--/.modal-->
+{% endblock %}
+
+{% block modal_add %}
+<div class="modal" id="add_form" role="dialog">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Add Related Object</h4>
+{{obj.object_type.name}}: {{obj.name}}
+</div>
+<div class="modal-body">
+<form class="add_form" method="post">{% csrf_token %}
+{% if obj.object_type.name == "report" %}
+<div id="select_type" >
+{{soform}}
+{% elif obj.object_type.name != "report" %}
+<div id="select_add">
+{{aoform.relation}}
+{% endif %}
+<div id="add_obj" >
+{{aoform.objects}}
+</div>
+<input class="btn btn-primary btn-sm" type="submit" name="add_obj" value="Add">
+</div>
+</form>
+</div><!--/.modal-body-->
+</div><!--/.modal-content-->
+</div><!--/.modal-dialog-->
+</div><!--/.modal-->
+{% endblock %}
+
+{% block modal_create %}
+<div class="modal" id="create_form" role="dialog">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Create Related Object</h4>
+{{obj.object_type.name}}: {{obj.name}}
+</div>
+<div class="modal-body">
+<form class="create_form" method="post">{% csrf_token %}
+{% if obj.object_type.name == "report" %}
+<div id="select_create">{{soform}}</div>
+{% else %}
+<div id="select_dr">{{drform}}</div>
+{% endif %}
+<br>
+<div id="create_object" >
+{% if coform %}
+<table class="table">
+{{coform.as_table}}
+</table>
+<input class="btn btn-info btn-sm" type="submit" name="create_obj" value="Create">
+{% endif %}
+</div><!--/#create_form-->
+</form>
+</div><!--/.modal-body-->
+</div><!--/.modal-content-->
+</div><!--/.modal-dialog-->
+</div><!--/.modal-->
+{% endblock %}
+
+{% block modal_edit %}
+<div class="modal" id="obj_form" role="dialog">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Edit</h4>
+</div>
+<div class="modal-body">
+<form class="create_form" method="post">{% csrf_token %}
+<table class="table">
+{{form.as_table}}
+</table>
+<input class="btn btn-primary btn-sm" type="submit" name="update" value="Update">
+</form>
+</div><!--/.modal-body-->
+</div><!--/.modal-content-->
+</div><!--/.modal-dialog-->
+</div><!--/.modal-->
+{% endblock %}
+
+{% block modal_pattern %}
+<div class="modal" id="pattern_form" role="dialog">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Edit Pattern</h4>
+</div>
+<div class="modal-body">
+<form class="create_form" method="post">{% csrf_token %}
+<table class="table">
+{{pform.as_table}}
+</table>
+<input class="btn btn-primary btn-sm" type="submit" name="update_pattern" value="Update">
+</form>
+</div><!--/.modal-body-->
+</div><!--/.modal-content-->
+</div><!--/.modal-dialog-->
+</div><!--/.modal-->
+{% endblock %}
+{% endif %}
+<div class="col-md-12">
+<div id="canvas-container" class="hidden">
+
+<div class="panel panel-default">
+<div class="panel-heading">
+<h1 id="header" style="cursor:pointer;">Visualize</h1>
+</div>
+
+<div class="panel-body">
+
+<div id="canvas-wrapper"><svg id="canvas"></svg></div>
+
+<div class="sidebar">
+<div id="legend">
+<h2>Legend</h2>
+<ul id="legend-content"></ul>
+</div>
+
+<div id="selected" >
+<h2>Selected Node</h2>
+<div id="selection"></div>
+</div><!--/#selected-->
+</div>
+
+</div><!--/.panel-body-->
+</div><!--/.panel-->
+</div><!--/#canvas-container-->
+</div>
+
+{% block left_pane %}
+<div id="view" class="col-md-6">
+<div id="obj_panel" class="panel panel-default">
+
+<div class="panel-heading">
+<h4>Parsed Result</h4>
+</div><!--.panel-heading-->
+
+<div id="obj_body" class="panel-collapse in">
+
+<div class="panel-body">
+{{bundle.objects|length}} objects
+<button class="btn btn-sm" id="viz" onclick=toggleViz("stixtext")>Visualize</button>
+
+<table class="table table-condensed">
+{% block property %}
+{% if obj.created %}<tr><th class="col-md-3">Created</th><td>{{obj.created|date:"c"}}</td></tr>{% endif %}
+{% if obj.modified %}<tr><th >Modified</th><td>{{obj.modified|date:"c"}}</td></tr>{% endif %}
+{% if obj.labels %}
+<tr><th >Labels</th>
+<td>
+{% for l in obj.labels.all %}
+{{l.value}}<br>
+{% endfor %}
+</td></tr>
+{% endif %}
+{% if type == "report"%}
+<tr><th >Publisher</th><td>{{obj.created_by_ref}}</td></tr>
+<tr><th >Published</th><td>{{obj.published}}</td></tr>
+{% endif %}
+{% if type == "identity"%}
+<tr><th >Sectors</th><td>{% for s in obj.sectors.all %}{{s}}<br>{% endfor%}</td></tr>
+{% endif %}
+{% if type == "threat-actor" or type == "campaign" or type == "intrusion-set" %}
+<tr><th >Alias</th><td>{% for a in obj.aliases.all %}{{a}}<br>{% endfor%}</td></tr>
+{% endif %}
+    {% if type == "sighting" %}
+<tr><th >Where Sighted</th><td>{% for w in obj.where_sighted_refs.all %}
+<a href="/stix/{{w.object_id.object_id}}">{{w}}<br>{% endfor%}</td></tr>
+<tr><th >Sighting of</th><td><a href="/stix/{{obj.sighting_of_ref.object_id}}">{{obj.sighting_of_ref}}</a></td></tr>
+{% endif %}
+{% if type == "campaign" or type == "sighting" or type == "intrusion-set" %}
+<tr><th >First/Last Seen</th><td>{{obj.first_seen|date:"c"}} -<br>{{obj.last_seen|date:"c"}}</td></tr>
+{% endif %}
+{% endblock %}
+{% if obj.description %}
+<tr>
+<th class="col-md-3">Description</th>
+<td><pre>{{obj.description}}</pre></td>
+</tr>
+{% endif %}
+</table>
+
+</div><!--/.panel-body-->
+</div><!--/.collapse-->
+</div><!--/.panel-->
+
+<div id="stix_panel" class="panel panel-default">
+<div class="panel-heading"><a data-toggle="collapse" href="#stix_body" >▼</a>STIX
+</div>
+<div id="stix_body" class="panel-collapse in">
+<div class="panel-body">
+<form method="POST">{% csrf_token %}
+<input class="btn btn-sm btn-info" type="submit" name="timeline" value="Timeline">
+{% if request.user.is_authenticated %}<input class="btn btn-sm btn-warning" type="submit" name="import" value="Import">{% endif %}
+<textarea name="input" id="stixtext" read-only style="height:50vh;width:100%">{{stix}}</textarea>
+</form>
+</div><!--/.panel_body-->
+</div><!--/#stix_body-->
+</div><!--/#stix_panel-->
+
+</div>
+{% endblock %}
+{% block right_pane %}
+<div class="col-md-6">
+
+<ul class="nav nav-pills">
+<li class="active"><a data-toggle="tab" href="#obj_tab">Objects</a></li>
+<li ><a data-toggle="tab" href="#rel_tab">Relations</a></li>
+<li><a data-toggle="tab" href="#sight_tab">Sightings</a></li>
+<li><a data-toggle="tab" href="#obs_tab">Observables</a></li>
+{% if obj.object_type.name == "threat-actor" %}
+<li><a data-toggle="tab" href="#chart_tab">Chart</a></li>
+{% endif %}
+{% if obj.object_type.name == "report" %}
+<li><a data-toggle="tab" href="#objrefs_tab">Object Refs</a></li>
+{% endif %}
+</ul>
+<div class="panel panel-primary">
+<div class="panel-body">
+{% if user.is_authenticated %}
+<a class="btn btn-primary btn-xs" data-toggle="modal" href="#add_form">Add</a>
+<a class="btn btn-info btn-xs" data-toggle="modal" href="#create_form">Create</a>
+<a class="btn btn-info btn-xs" data-toggle="modal" href="#sight_form">Sighting</a>
+{% if obj.object_type.name == "report" %}
+<a class="btn btn-info btn-xs" data-toggle="modal" href="#bulk_form">Bulk Create</a>
+{% endif %}
+<a class="btn btn-warning btn-xs" onclick=detachObject()>Detach</a>
+<!--a class="btn btn-warning btn-xs" >Connect</a-->
+{% endif %}
+<div class="tab-content">
+
+<div class="tab-pane" id="objrefs_tab" >
+<table id="objrefs_table" class="table table-condensed table-stripe table-hover display" width="100%">
+<thead><tr>
+<th class="col-sm-1"> </th>
+<th >Object</th>
+</tr></thead>
+<tbody >
+{% for r in obj.object_refs.all %}
+<tr>
+<td><input class="object_id" type="checkbox" value="{{r.object_id}}"></td>
+<td><a href="/stix/{{r.object_id}}">
+{% if mask and "identity" in r.object_id %}{{r.object_id}}{% else %}{{r}}{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<div class="tab-pane" id="obs_tab" >
+{% if obj.object_type.name == "indicator" %}
+<h4>Indicator Pattern</h4>
+<a class="btn btn-info btn-xs" data-toggle="modal" href="#pattern_form">Edit</a>
+<pre>{{obj.pattern.pattern}}</pre>
+{% endif %}
+<table id="obs_table" class="table table-condensed table-stripe table-hover display" width="100%">
+<thead><tr>
+<th class="col-sm-1"> </th>
+<th data-sort-default>Observable</th>
+<th type>Type</th>
+</tr></thead>
+<tbody >
+{% for k,v in bundle.items %}
+{% if k == "objects" %}
+{% for o in v %}
+{% if o.type == "observed-data" %}
+{% for i,j in o.objects.items %}
+<tr>
+<td><input class="object_id" type="checkbox" value="{{o.object_id}}"></td>
+<td><a href="/observable/">{{j.name}}</td>
+<td>{{j.type}}</td>
+</tr>
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<div class="tab-pane" id="sight_tab" >
+<table id="sight_table" class="table table-condensed table-stripe table-hover display" width="100%">
+<thead><tr>
+<th class="col-sm-1"> </th>
+<th class="col-sm-3">Where Sighted</th>
+<th class="col-sm-3">Sighting of</th>
+<th data-sort-default class="col-sm-5">First/Last Seen</th>
+</tr></thead>
+<tbody id="sight_tbody">
+{% for k,v in bundle.items %}
+{% if k == "objects" %}
+{% for s in v %}
+{% if s.type == "sighting" %}
+<tr>
+<td>
+<a class="btn btn-default btn-xs" href="/stix/{{s.id}}">></a>
+<input class="object_id" type="checkbox" value="{{s.id}}">
+</td>
+<td>
+{% for r in s.where_sighted_refs %}
+{% for o in v %}
+{% if o.id == r %}
+<a href="/stix/{{o.id}}">
+<span class="label label-default">{{o.type}}</span><br>
+{% if not mask%}{{o.name}}{% else %}{{o.id}}{% endif %}</a><br>
+{% endif %}
+{% endfor %}
+{% endfor %}
+</td>
+<td>
+{% for o in v %}
+{% if o.id == s.sighting_of_ref %}
+<a href="/stix/{{o.id}}">
+<span class="label label-default">{{o.type}}</span><br>
+{{o.name}}</a><br>
+{% endif %}
+{% endfor %}
+</td>
+<td>{{s.first_seen}}
+- {{s.last_seen}}</td>
+</tr>
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+</div><!--/#sightings-->
+
+<div class="tab-pane " id="rel_tab" >
+<table id="rel_table" class="table table-condensed table-stripe table-hover display" width="100%">
+<thead><tr>
+<th class="col-sm-1"> </th>
+<th class="col-sm-3">Source</th>
+<th data-sort-default class="col-sm-2">Type</th>
+<th class="col-sm-3">Target</th>
+<th class="col-sm-3">Description</th>
+</tr></thead>
+<tbody id="rel_tbody">
+{% for k,v in bundle.items %}
+{% if k == "objects" %}
+{% for r in v %}
+{% if r.type == "relationship" %}
+{% if obj.object_id != r.source_ref and obj.object_id != r.target_ref %}
+<tr style="background-color:lightyellow">
+{% else %}
+<tr>
+{% endif %}
+<td>
+<input class="object_id" type="checkbox" value="{{r.id}}">
+</td>
+<td>
+{% for s in v %}
+{% if s.id == r.source_ref %}
+<span class="label label-default">{{s.type}}</span><br>
+<a href="/stix/{{s.id}}">
+{% if mask and s.type == "identity" %}{{s.id}}{% else %}{{s.name}}{% endif %}
+</a>
+{% endif %}
+{% endfor %}
+</td>
+<td style="vertical-align:middle">
+<a href="/stix/{{r.id}}">
+{{r.relationship_type}}
+</a>
+</td>
+<td>
+{% for t in v %}
+{% if t.id == r.target_ref %}
+<span class="label label-default">{{t.type}}</span><br>
+<a href="/stix/{{t.id}}">
+{% if mask and t.type == "identity" %}{{t.id}}{% else %}{{t.name}}{% endif %}
+</a>
+{% endif %}
+{% endfor %}
+</td>
+<td>
+{{r.description}}
+</td>
+</tr>
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+</div><!--/#relations-->
+
+<div class="tab-pane active" id="obj_tab" >
+
+<table id="obj_table" class="table table-condensed table-stripe table-hover display" width="100%">
+<thead><tr>
+<th class="col-sm-4">Name</th>
+<th data-sort-default class="col-sm-4">Type</th>
+<th class="col-sm-4">Property</th>
+</tr></thead>
+<tbody >
+{% for k,v in bundle.items %}
+{% if k == "objects" %}
+{% for o in v %}
+<tr>
+<td><a href="/stix/{{o.id}}">
+{% if mask and o.type == "identity" %}{{o.id}}
+{% elif o.type == "observed-data" %}{{o.id}}
+{% else %}{{o.name}}
+{% endif %}
+</a></td>
+<td><a href="/stix/{{o.type}}">{{o.type}}</a></td>
+<td>
+{% if o.type == "attack-pattern" %}
+{% for k in o.kill_chain_phases %}{{k.phase_name}}{% endfor %}
+{% elif o.type == "campaign" %}
+{% for a in o.aliases %}{{a}}<br>{% endfor %}
+{% elif o.type == "observed-data" %}
+{% for oo in o.objects %}<a href="/observable/{{oo.id}}">{{oo}}<br>{% endfor %}
+{% else %}
+{% for l in o.labels %}{{l}}<br>{% endfor %}
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+</div><!--/#objects-->
+
+</div><!--/tab-content-->
+
+</div><!--/.panel-body-->
+</div><!--/.panel-->
+
+</div><!--/tables-->
+
+</div>
+{% endblock %}
+
+{% block stixvizlib %}
+<script type="text/javascript" src="/static/d3/d3.min.js"></script>
+<script type="text/javascript" src="/static/stixviz/stix2viz.js"></script>
+<script type="text/javascript" src="/static/stixviz/app.js"></script>
+{% endblock %}
+
+{% endblock %}

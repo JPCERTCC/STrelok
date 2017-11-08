@@ -1,0 +1,47 @@
+{% extends "stix_view.html" %}
+
+{% block jquery %}
+<link rel="stylesheet" type="text/css" href="/static/stixviz/app.css" />
+{% endblock %}
+
+{% block modal %}
+<div class="modal" id="import_form" role="dialog">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Import</h4>
+</div>
+<div class="modal-body">
+<h3>Are you sure?</h3>
+<form method="post">{% csrf_token %}
+<input class="btn btn-md btn-warning" type="submit" name="import" value="Yes">
+<button class="btn btn-md btn-primary" data-dismiss="modal">No, Close</button>
+</form>
+</div><!--/.modal-body-->
+</div><!--/.modal-content-->
+</div><!--/.modal-dialog-->
+</div><!--/.modal-->
+{% endblock %}
+
+
+{% block table %}
+<div id="tables" class="col-md-12">
+
+<div class="panel panel-default">
+<div class="panel-heading">STIX</div>
+<div class="panel-body">
+
+
+<form method="POST">{% csrf_token %}
+<button class="btn btn-default" type="button" id="viz" onclick=toggleViz("stixtext") >Visualize</button>
+<input class="btn btn-default" type="submit" name="timeline" value="Timeline">
+<!--a class="btn btn-warning" data-toggle="modal" href="#import_form">Import</a-->
+{% if request.user.is_authenticated %}<input class="btn btn-md btn-warning" type="submit" name="import" value="Import">{% endif %}
+<textarea id="stixtext" name="input" style="height:400px;">{{stix}}</textarea>
+</form>
+
+</div><!--/.panel-body-->
+</div><!--/.panel-->
+</div><!--/tables-->
+{% endblock %}
+

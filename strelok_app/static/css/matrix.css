@@ -1,0 +1,34 @@
+table#ttp_table {
+    border-spacing:10px;
+    border-collapse:separate;
+}
+
+table#ttp_table th, table#ttp_table td {
+    text-align:center;
+    vertical-align:middle;
+    border-top:none;
+}
+
+table#ttp_table .box{
+    box-shadow: 5px 5px 20px rgba(128,128,128,0.8);
+}
+
+table#ttp_table td.malware {
+    background-color:red;
+}
+
+table#ttp_table td.attack-pattern{
+    background-color:darkorange;
+}
+
+table#ttp_table td.tool{
+    background-color:goldenrod;
+}
+
+table#ttp_table td a {
+    color:white;
+}
+
+table#ttp_table thead {
+    background-color:white;
+}

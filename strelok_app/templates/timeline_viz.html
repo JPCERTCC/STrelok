@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}<title>Timeline</title>{% endblock %}
+{% block datetimepickerlib %}{% endblock %}
+{% block datatableslib %}{% endblock %}
+{% block tablesortlib %}{% endblock %}
+{% block jquery %}
+<link rel="stylesheet" type="text/css" href="/static/css/timeline.css">
+<style>
+{% for k,v in colors.items %}
+.vis-item.{{k}} {
+    background-color: {{v}};
+}
+{% endfor%}
+</style>
+<script>
+function toggleOption(){
+    var x = document.getElementById("option");
+    var y = document.getElementById("visualization");
+    if (x.style.display === "none") {
+        x.style.display = "block";
+        x.style.width = "20%";
+        y.style.width = "80%";
+    } else {
+        x.style.display = "none";
+        x.style.width = "0%";
+        y.style.width = "100%";
+    }
+};
+$(document).ready(
+function(){
+{% if obj.object_type.name == "threat-actor" %}
+$('#id_report').prop('checked', true).change();
+{% endif %}
+}
+);
+</script>
+{% endblock %}
+
+{% block container %}
+<div class="col-md-12">
+<div class="panel panel-default">
+<div class="panel-heading">Timeline{% if obj %} of <a href="/stix/{{id}}">{{obj}}</a>{% endif %}</div>
+<div class="panel-body">
+<input class="btn btn-sm"  type="button" id="zoomIn" value="Zoom in"/>
+<input class="btn btn-sm" type="button" id="zoomOut" value="Zoom out"/>
+<input class="btn btn-sm" type="button" id="moveLeft" value="Move left"/>
+<input class="btn btn-sm" type="button" id="moveRight" value="Move right"/>
+<button style="float:right;margin-left:10px;" class="btn btn-sm" onclick=toggleOption()>▼ Legend</button>
+<form style="float:right">{{vform}}</form>
+
+<div style="float:left;width:100%" id="visualization" ></div>
+
+<div id="option" style="display:none;width:0%;float:right;">
+<button class="btn btn-block" data-toggle="collapse" href="#types_form">Option</button>
+<div id="types_form" class="collapse">
+<form method=post>{% csrf_token %}
+{{form.as_p}}
+<input type=submit name="refresh" value="refresh">
+</form>
+<hr>
+</div>
+{% for k,v in colors.items %}
+{% if k != "report" %}
+<input class="legend" id="{{k}}" type="checkbox" value="{{k}}" checked>
+<span style="font-size:200%;color:{{v}}">■</span>: {{k}}<br>
+{% endif %}
+{% endfor %}
+</div>
+
+</div><!--/panel-body-->
+</div><!--/panel-->
+</div>
+
+<script type="text/javascript">
+{% if groups %}
+var groups = new vis.DataSet();
+groups.add([{% for k,v in groups.items %}
+{
+    id: "{{v.id}}",
+    content: "{{v.content|escape}}",
+    nestedGroups: [{% for n in v.nested_groups%}"{{n}}",{% endfor %}],
+},
+{% endfor %}]);
+{% endif %}
+
+{% if subgroups %}
+groups.add([{% for k,v in subgroups.items %}
+{
+    id: "{{v.id}}",
+    content: "{{v.content|safe}}",
+},
+{% endfor %}]);
+{% endif %}
+
+var items = new vis.DataSet();
+items.add([{% for k,i in items.items %}
+{% if i.group %}
+{
+    id: "{{i.id}}",
+    content: "{{i.content|safe}}",
+    title: "{{i.title|safe}}",
+    group: "{{i.group}}",
+    start: "{{i.start}}",
+    {% if i.subgroup %}subgroup: "{{i.subgroup}}",{% endif %}
+    {% if i.className %}className: "{{i.className}}",{% endif %}
+    {% if i.end %}end: "{{i.end}}",{% endif %}
+    {% if i.type %}type: "{{i.type}}",{% endif %}
+    {% if i.subgroup == "report" %}style: "visibility:hidden",{% endif %}
+},
+{% endif %}
+{% endfor %}]);
+
+var container = document.getElementById('visualization');
+var options = {
+    align: 'left',
+    orientation: 'top',
+    type: 'point',
+    stack: true,
+    stackSubgroups: true,
+    groupOrder: 'content',
+};
+{% if groups %}
+var timeline = new vis.Timeline(container, items, groups, options);
+{% else %}
+var timeline = new vis.Timeline(container, items, options);
+{% endif %}
+
+function move (percentage) {
+    var range = timeline.getWindow();
+    var interval = range.end - range.start;
+    timeline.setWindow({
+        start: range.start.valueOf() - interval * percentage,
+        end:   range.end.valueOf()   - interval * percentage
+    });
+}
+document.getElementById('zoomIn').onclick    = function () { timeline.zoomIn( 0.2); };
+document.getElementById('zoomOut').onclick   = function () { timeline.zoomOut( 0.2); };
+document.getElementById('moveLeft').onclick  = function () { move(0.2); };
+document.getElementById('moveRight').onclick  = function () { move(-0.2); };
+
+document.getElementById('id_plot').onchange = function () {
+    timeline.setOptions({type:this.value});
+};
+document.getElementById('id_stack_groups').onchange = function () {
+    timeline.setOptions({stack:$(this).prop("checked")});
+};
+document.getElementById('id_stack_subgroups').onchange = function () {
+    timeline.setOptions({stackSubgroups:$(this).prop("checked")});
+};
+
+$('input.legend').click(function() {
+checked = $(this).prop("checked");
+var c = $(this).attr("id");
+toggleItem(c, checked);
+});
+function toggleItem(c, checked) {
+var item = items.get();
+for (var i in item){
+    j = item[i]["id"];
+    k = items.get(j);
+    if (k["className"]==c){
+        if (checked==true){
+            items.update({id:j,style:"visibility:visible"});
+        }else {
+            items.update({id:j,style:"visibility:hidden"});
+        };
+    };
+};
+};
+$('#id_group input').click(function() {
+checked = $(this).prop("checked");
+var t = $(this).parent().text().replace(/^\s+/, "");
+var g = groups.get(t);
+for (var i in g["nestedGroups"]){
+    var j = groups.get(g["nestedGroups"][i])
+    groups.update({id:j["id"], visible:checked});
+}
+groups.update({id:g["id"], visible:checked});
+});
+document.getElementById('id_report').onchange = function () {
+checked = $(this).prop("checked");
+toggleItem("report", checked);
+};
+</script>
+</div>
+{% endblock%}

@@ -1,0 +1,22 @@
+
+INSTALLED_APPS += [
+    'strelok_app',
+    'django_otp',
+    'django_otp.plugins.otp_static',
+    'django_otp.plugins.otp_totp',
+    'two_factor',
+]
+
+MIDDLEWARE += [
+    'django_otp.middleware.OTPMiddleware',
+]
+
+ROOT_URLCONF = 'strelok_app.urls'
+
+from django.core.urlresolvers import reverse_lazy
+LOGIN_URL = 'two_factor:login'
+LOGIN_REDIRECT_URL = 'two_factor:login'
+LOGIN_URL = 'document_root'
+LOGIN_REDIRECT_URL = 'document_root'
+
+

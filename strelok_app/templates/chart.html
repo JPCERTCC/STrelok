@@ -1,0 +1,179 @@
+{% extends "base_list.html" %}
+
+{% block title %}
+<title>{{objtype|capfirst}}</title>
+{% endblock %}
+
+{% block visjslib %}{% endblock %}
+{% block jquery %}
+<!--
+<script type="text/javascript" src="/static/d3/d3.js"></script>
+<link rel="stylesheet" type="text/css" href="/static/psd3/psd3.css">
+<script type="text/javascript" src="/static/psd3/psd3.js"></script>
+-->
+<script type="text/javascript" src="/static/highcharts/highcharts.js"></script>
+<script type="text/javascript" src="/static/highcharts/modules/data.js"></script>
+<script type="text/javascript" src="/static/highcharts/modules/drilldown.js"></script>
+<script>
+$(document).ready(
+    function(){
+        $('a[data-toggle="tab"]').on( 'shown.bs.tab', function (e) {
+            $.fn.dataTable.tables( {visible: true, api: true} ).columns.adjust();
+        } );
+	$('#objtype_table').dataTable({
+            "processing":true,
+            "serverSide":true,
+            "ajax": "{% url 'threatactor_data' %}",
+            "order":[0, 'desc'],
+        });
+        //$('#id_firstseen').datetimepicker({
+        //        format:'Y-m-d H:i'
+        //});
+    }
+);
+</script>
+{% endblock%}
+
+{% block modal %}
+<div class="modal" id="objtype_form" role="dialog">
+<div class="modal-dialog">
+<div class="modal-content">
+
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Create {{objtype}}</h4>
+</div>
+
+<div class="modal-body">
+<form method=post>{% csrf_token %}
+
+<div class="col-md-12">
+<div class="col-md-7">
+<div><p>Name:</p>
+{{form.name}}
+</div>
+<p>Description:</p>
+{{form.description}}
+</div>
+<div class="col-md-5">
+<p>Labels:</p>
+{{form.labels}}
+</div>
+</div>
+
+<input class="btn btn-primary btn-sm" type="submit" name="create" value="create">
+</form>
+</div><!--/.modal-body-->
+
+</div><!--/.modal-content-->
+</div><!--/.modal-dialog-->
+</div><!--/.modal-->
+{% endblock %}
+
+{% block left_pane %}
+<div id="left_pane" class="col-md-6">
+<h3 style="margin-top: 0">{{objtype|capfirst}}
+<a class="btn btn-primary btn-sm" data-toggle="modal" href="#objtype_form">Create</a>
+</h3>
+<hr>
+<table id="objtype_table" class="table table-condensed table-stripe table-hover display" width="100%">
+<thead><tr>
+<th class="col-md-2">ID</th>
+<th class="col-md-4">Name</th>
+<th class="col-md-6">Alias</th>
+</tr></thead>
+</table>
+</div><!--/#left_pane-->
+{% endblock %}
+
+{% block right_pane %}
+<div id="right_pane" class="col-md-6" >
+<div class="panel panel-primary">
+
+<div class="panel-heading">
+Statistics
+</div>
+<div class="panel-body">
+<div id="container" ></div>
+<script type="text/javascript">
+data = {{data|safe}};
+subtitle = 'Click the column to view target category';
+xaxis = 'Threat Actor';
+function setChart(options)  {
+    chart.series[0].remove(false);
+    chart.addSeries({
+        type: options.type,
+        //name: options.name,
+        data: options.data,
+        //color: options.color || 'white'
+        colorByPoint: true,
+    }, false);
+    if (options.name){
+        chart.setTitle(null, { text: options.name});
+    }else{
+        chart.setTitle(null, { text: subtitle});
+    };
+    //chart.xAxis[0].remove(false);
+    chart.redraw();
+};
+chart = new Highcharts.chart({
+    chart: { renderTo: 'container' },
+    title: { text: 'Count of Targets by Threat Actor' },
+    subtitle: { text: subtitle },
+    xAxis: { 
+        type: 'category', 
+        //title: {text: xaxis } ,
+    },
+    yAxis: { 
+        title: {text: 'Target Count' } 
+    },
+    legend: { enabled: false },
+    exporting: { enabled: false },
+    plotOptions: {
+        series: {
+            cursor: 'pointer',
+            datalabels: {
+                enabled: false,
+            },
+            point: {
+                events: {
+                    click: function(){
+                        var drilldown = this.drilldown;
+                        var options;
+                        if (drilldown){
+                            options = {
+                                'name': drilldown.name,
+                                //'categories': drilldown.categories,
+                                'data': drilldown.data,
+                                'type': 'pie',
+                            }
+                        }else{
+                            options = {
+                                //'name':name,
+                                //'categories':categories,
+                                'data':data,
+                                'type':'column',
+                            }
+                        }
+                        setChart(options);
+                    }
+                }
+            }
+        }
+    },
+    tooltip: {
+        //headerFormat: '<span>{series.name}</span><br>',
+        pointFormat: '{point.y} targets'
+    },
+    series: [{
+        colorByPoint: true,
+        type: 'column',
+        name: name,
+        data: data,
+    }]
+});
+</script>
+</div><!--/.panel-body-->
+</div><!--/.panel-->
+</div><!--/.col-md-6-->
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}<title>STIX</title>{% endblock %}
+
+{% block datetimepickerlib %}{% endblock %}
+{% block datatableslib %}{% endblock %}
+{% block tablesortlib %}{% endblock %}
+{% block jquery %}
+<script>
+function drawvis(){
+    var data = $("form").serialize();
+    $.ajax({
+            type: 'POST',
+            url: '/data/drs/',
+            data: data,
+            success: function(result){
+                var network = visNetwork(
+                    result["nodes"],
+                    result["edges"],
+                    result["icon"],
+                );
+                network.redraw();
+            }
+    });
+};
+$(document).ready(
+    function(){
+        drawvis();
+        $("input#select_types").click(function(){
+            if($(this).prop("checked")){
+                $('ul#id_types :checkbox').prop('checked',true);
+            }else{
+                $('ul#id_types :checkbox').prop('checked',false);
+            };
+        });
+        $("input#select_relation").click(function(){
+            if($(this).prop("checked")){
+                $('ul#id_relation :checkbox').prop('checked',true);
+            }else{
+                $('ul#id_relation :checkbox').prop('checked',false);
+            };
+        });
+        $("input").change(function(){
+            drawvis();
+        });
+    }
+);
+</script>
+{% endblock %}
+
+{% block container %}
+<div class="col-md-12">
+<div class="panel panel-default">
+<div class="panel-heading">STIX Defined Relationships</div>
+<div class="panel-body">
+
+<div class="col-md-7" style="margin: 0 auto;height:75vh" id="network" ></div>
+<div class="col-md-5" >
+<h4>Double-click the node to jump to object list.</h4>
+<form method=post>{% csrf_token %}
+    <label>show icon:</label>{{tsform.icon}}
+<br><br>
+<div class="col-md-6" id="types_form">
+    <input type="checkbox" id="select_types" checked><label>types</label>{{tsform.types}}
+</div>
+<div class="col-md-6" id="rel_form">
+    <input type="checkbox" id="select_relation" checked><label>relationship</label>{{tsform.relation}}
+</div>
+</form>
+</div>
+
+</div><!--/panel-body-->
+</div><!--/panel-->
+</div>
+{% endblock%}

@@ -1,0 +1,110 @@
+{% extends "base_list.html" %}
+{% block title %}<title>Attack Pattern</title>{% endblock %}
+
+{% block visjslib %}{% endblock %}
+{% block tablesortlib %}{% endblock %}
+{% block datatableslib %}{% endblock %}
+{% block datatimepickerlib %}{% endblock %}
+{% block jquery %}
+<script type="text/javascript" src="/static/highcharts/highcharts.js"></script>
+<script type="text/javascript" src="/static/highcharts/modules/treemap.js"></script>
+<script>
+$(document).ready(
+    function(){
+        chart = drawMatrix();
+        chart.setSize(
+            chart.chartWidth,
+            chart.chartHeight*{{zoom}},
+        );
+    }
+);
+</script>
+{% endblock%}
+
+{% block left_pane %}{% endblock %}
+{% block right_pane %}
+<div id="right_pane" class="col-md-12" >
+<div class="panel panel-default">
+
+<div class="panel-heading">TTP Matrix</div>
+<div class="panel-body">
+
+<div class="col-md-10"><div id="container" ></div></div>
+<div class="col-md-2">
+<form class="add_form" method=post>{% csrf_token %}
+{{form.as_p}}
+<input type=submit name="refresh" value="refresh">
+</form>
+</div>
+<script type="text/javascript">
+function drawMatrix(){
+chart = Highcharts.chart('container', {
+    //title: {text:"TTP Matrix"},
+    title: null,
+    credits: {"enabled":false},
+    tooltip: {"enabled":false},
+    series: [{
+      type: "treemap",
+      layoutAlgorithm: 'stripes',
+      allowDrillToNode: true,
+      alternateStartingDirection: true,
+      layoutStartingDirection: 'horizontal',
+      levels: [{
+          level: 1,
+          borderWidth: 3,
+          dataLabels: {
+            enabled: true,
+            align: 'right',
+            verticalAlign: 'bottom',
+            style: {
+              fontSize: '18px',
+              fontWeight: 'normal',
+              textOutline: false
+            },
+          },
+        }, {
+          level: 2,
+          borderWidth: 2,
+          layoutStartingDirection: 'horizontal',
+          dataLabels: {
+            enabled: true,
+            align: 'left',
+            verticalAlign: 'top',
+            style: {
+              fontSize: '16px',
+              fontWeight: 'bold',
+              textOutline: false
+            },
+            useHTML:true,
+            formatter:function(){
+                //console.log(this);
+                return '<a class="box" href="/stix/' + this.point.id + '">'+this.key+'</a>';
+            },
+          }
+        }, {
+          level: 3,
+          dataLabels: {
+            enabled: true,
+            style: {
+              fontSize: '12px',
+              fontWeight: 'bold',
+              textOutline: false
+            },
+            useHTML:true,
+            formatter:function(){
+                //console.log(this);
+                return '<a class="box" href="/stix/' + this.point.id + '">'+this.key+'</a>';
+            },
+          }
+        },
+      ],
+      data: {{data|safe}}
+    }]
+});
+return chart;
+}
+</script>
+</div><!--/.panel-body-->
+</div><!--/.panel-->
+</div><!--/.col-md-6-->
+{% endblock %}

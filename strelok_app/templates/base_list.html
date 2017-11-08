@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}<title>{{type|capfirst}}</title>{% endblock %}
+{% block tablesortlib %}{% endblock %}{% block visjslib %}{% endblock %}
+{% block jquery %}
+<script type="text/javascript" src="/static/js/bindpicker.js"></script>
+{% if type == "threat-actor" or type == "identity" %}
+<script type="text/javascript" src="/static/highcharts/highcharts.js"></script>
+<script type="text/javascript" src="/static/highcharts/modules/data.js"></script>
+<script type="text/javascript" src="/static/highcharts/modules/drilldown.js"></script>
+<script src="/static/js/chart_ati.js"></script>
+<script src="/static/js/chart_tgt.js"></script>
+{% endif %}
+<script>
+function getDataTable(type){
+	$('#objtype_table').dataTable({
+            "processing":true,
+            "serverSide":true,
+            "ajax": "/data/"+type,
+            "order":[0, 'desc'],
+            "lengthMenu": [[ 10, 50, 100 ],[ 10, 50, 100 ],],
+            "pageLength": 10,
+            "stateSave": true,
+        });
+};
+function drawTgtChart(prop){
+    $.ajax({
+        type: 'GET',
+        url: '/chart/target/'+prop,
+        success: function(data){
+            tgtChart(data, prop);
+        }
+    });
+};
+function drawActorChart(prop){
+    $.ajax({
+        type: 'GET',
+        url: '/chart/threat-actor/'+prop,
+        success: function(data){
+            actorChart(data);
+        }
+    });
+};
+$(document).ready(
+    function(){
+        getDataTable("{{type}}");
+        bindPicker();
+        {% if type == "threat-actor" %}drawActorChart('lalias');
+        {% elif type == "identity" %}drawTgtChart('lalias');
+        {% endif %}
+    }
+);
+</script>
+{% endblock%}
+{% block container %}
+{% block modal_create %}
+<div class="modal" id="create_form" role="dialog"><div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Create {{type|capfirst}}</h4></div>
+<div class="modal-body"><form class="create_form" method=post>{% csrf_token %}
+<table class="table table-condensed">{{form.as_table}}</table>
+<input class="btn btn-primary btn-sm" type="submit" name="create" value="Create">
+</form></div>
+</div></div></div>
+{% endblock %}
+{% block modal_bulk %}
+<div class="modal" id="bulk_form" role="dialog"><div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><button type="button" class="close" data-dismiss="modal">&times;</button>
+<h4 class="modal-title">Bulk Create {{type|capfirst}}</h4></div>
+<div class="modal-body"><h4>Input Format: {{bulkformat}}</h4>
+<form class="create_form" method=post>{% csrf_token %}
+<table class="table table-condensed">{{sform.as_table}}{{bulkform.as_table}}</table>
+<input class="btn btn-primary btn-sm" type="submit" name="create_bulk" value="Create">
+</form></div>
+</div></div></div>
+{% endblock %}
+
+<div class="col-md-12">
+{% block left_pane %}
+{% if type == "threat-actor" or type == "identity" %}
+<div id="left_pane" class="col-md-7">
+{% else %}
+<div id="left_pane" class="col-md-12">
+{% endif %}
+<h3 style="margin-top: 0"><a href="/stix/{{type}}">{{type|capfirst}}</a>
+{% if request.user.is_authenticated %}
+<a class="btn btn-primary btn-sm" data-toggle="modal" href="#create_form">Create</a>
+{% if type == 'relationship' or type == 'sighting' %}
+<a class="btn btn-warning btn-sm" data-toggle="modal" href="#bulk_form">Bulk Update</a>
+{% else %}
+<a class="btn btn-warning btn-sm" data-toggle="modal" href="#bulk_form">Bulk Create</a>
+{% endif %}
+<a class="btn btn-default btn-sm"  href="/stix/{{type}}.json">STIX2</a>
+{% endif %}
+</h3>
+<hr>
+<table id="objtype_table" class="table table-condensed table-stripe table-hover display" width="100%">
+<thead><tr>
+{% block left_thead %}
+<th >Created</th>
+{% if type == "relationship" %}
+<th>Object ID</th>
+<th>Source</th>
+<th>Type</th>
+<th>Target</th>
+{% elif type == "sighting" %}
+<th>Object ID</th>
+<th>Where Sighted</th>
+<th>Sighting of</th>
+{% elif type == "observed-data" %}
+<th>Object ID</th>
+<th>Objects</th>
+{% else %}
+<th >Name</th>
+{% if type == "report" %}
+<th class="col-md-2">Created By</th>
+<th class="col-md-2">Published</th>
+{% elif type == "attack-pattern" %}
+<th class="col-md-3">Kill Chain</th>
+{% elif type == "identity" %}
+<th class="col-md-3">Sector</th>
+{% elif type == "malware" or type == "tool" %}
+<th class="col-md-3">Labels</th>
+<th class="col-md-3">Kill Chain</th>
+{% elif type == "campaign" or type == "intrusion-set" %}
+<th >Aliases</th>
+<th class="col-md-2">First Seen</th>
+{% elif type == "threat-actor" %}
+<th >Aliases</th>
+{% elif type == "indicator" %}
+<th >Pattern</th>
+{% endif %}
+{% endif %}
+{% endblock %}
+</tr></thead>
+</table>
+</div>
+{% endblock %}
+{% block right_pane %}
+{% if type == "threat-actor" or type == "identity" %}
+<div id="right_pane" class="col-md-5">
+<div class="panel panel-default">
+<div class="panel-heading">Stats</div>
+<div class="panel-body">
+<div id="container" style="height:60vh"></div>
+Refresh Chart:
+{% if type == "threat-actor" %}
+<a class="btn btn-default btn-xs" onclick=drawActorChart('label')>Label</a>
+<a class="btn btn-default btn-xs" onclick=drawActorChart('lalias')>Label(Alias)</a>
+<a class="btn btn-default btn-xs" onclick=drawActorChart('sector')>Sector</a>
+{% elif type == "identity" %}
+<a class="btn btn-default btn-xs" onclick=drawTgtChart('label')>Label</a>
+<a class="btn btn-default btn-xs" onclick=drawTgtChart('lalias')>Label(Alias)</a>
+<a class="btn btn-default btn-xs" onclick=drawTgtChart('sector')>Sector</a>
+{% endif%}
+</div></div></div>
+{% endif %}
+{% endblock %}
+{% block stixvizlib %}{% endblock %}
+{% endblock %}

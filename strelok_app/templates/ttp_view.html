@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}<title>TTP Matrix</title>{% endblock %}
+{% block visjslib %}{% endblock %}
+{% block datatableslib %}{% endblock %}
+{% block datetimepickerlib %}{% endblock %}
+{% block jquery %}
+<link rel="stylesheet" type="text/css" href="/static/css/matrix.css" /> 
+<script type="text/javascript" src="/static/sticky/jquery.stickytableheaders.min.js"></script>
+<script>
+$(document).ready(
+function(){
+    $('table').stickyTableHeaders();
+});
+</script>
+{% endblock%}
+{% block container %}
+<div class="col-md-12" >
+<div class="panel panel-default">
+<div class="panel-heading">TTP Matrix</div>
+<div class="panel-body">
+
+<button class="btn" style="float:right;" data-toggle="collapse" data-target="#option">Option</button>
+<div id="option" class="collapse">
+<div>
+<form style="float:right" class="create_form" method=post action="/stix/matrix/">{% csrf_token %}
+{{form}}<input class="btn" type=submit name="refresh" value="refresh">
+</form>
+</div>
+</div>
+
+<div class="col-md-12">
+<table id="ttp_table" class="table table-borderd">
+<thead><tr>
+<th colspan="1">Kill Chain Phase</th>
+<th colspan="1">TTP</th>
+{% for a in actor %}<th>
+<a href="/stix/{{a.object_id.object_id}}">{{a}}   </a>
+<a href="/stix/matrix/{{a.object_id.object_id}}" style="float:right">▼</a>
+</th>{% endfor%}
+</tr></thead>
+<tbody>
+{% for pn,ttps in data.items %}
+{% if ttps %}{% for ttp, aoids in ttps.items %}
+<tr>{% if forloop.first %}
+<td rowspan="{{ttps|length}}"
+{% for cn,cc in color.items %}{% if cn == pn %}class="box" style="background-color:#{{cc}}"{% endif %}{% endfor %}
+><a>{{pn}}</a></td>
+{% endif %}
+<td class="{{ttp.object_type.name}} box"><a href="/stix/{{ttp.object_id.object_id}}">{{ttp.name}}</a></td>
+{% for a in actor %}
+<td {% for aoid in aoids %}
+{% if a.object_id.id == aoid %}
+{% for cn, cc in color.items %}
+{% if cn == pn %}style="background-color:#{{cc}};" class="box" ><a href="/stix/{{ttp.object_id.object_id}}">{{ttp.name}}</a{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}></td>
+{% endfor %}
+</tr>
+{% endfor %}
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+</div></div></div>
+</div>
+{% endblock %}

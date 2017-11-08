@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+{% block title %}<title></title>{% endblock %}
+{% block defaultlib %}
+<script type="text/javascript" charset="utf8" src="/static/jquery/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/static/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="/static/bootstrap/css/bootstrap-theme.min.css">
+<script type="text/javascript" src="/static/bootstrap/js/bootstrap.min.js"></script>
+{% endblock %}
+{% block datetimepickerlib %}
+<link rel="stylesheet" type="text/css" href="/static/datetimepicker/build/jquery.datetimepicker.min.css">
+<script type="text/javascript" charset="utf8" src="/static/datetimepicker/build/jquery.datetimepicker.full.min.js"></script>
+{% endblock %}
+{% block datatableslib %}
+<link rel="stylesheet" type="text/css" href="/static/datatables/css/jquery.dataTables.min.css">
+<script type="text/javascript" charset="utf8" src="/static/datatables/js/jquery.dataTables.min.js"></script>
+{% endblock %}
+{% block tablesortlib %}
+<link rel="stylesheet" type="text/css" href='/static/tablesort/tablesort.css'>
+<script src='/static/tablesort/dist/tablesort.min.js'></script>
+{% endblock %}
+{% block visjslib %}
+<link href="/static/vis/dist/vis.min.css" type="text/css" rel="stylesheet">
+<script type="text/javascript" src="/static/vis/dist/vis.min.js"></script>
+<script type="text/javascript" src="/static/js/visnetwork.js"></script>
+{% endblock %}
+<link rel="stylesheet" type="text/css" href="/static/css/main.css">
+{% block jquery %}{% endblock %}
+</head>
+
+<body style="overflow-y:scroll">
+<div class="container-fluid" >
+
+{% block header %}
+<nav class="navbar navbar-default">
+<div class="container-fluid">
+<ul class="nav navbar-nav">
+
+<li><a href="/">Top</a></li>
+
+<li class="dropdown">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">
+STIX Domain Object<span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li><a href="/stix/attack-pattern/">Attack Pattern</a></li>
+<li><a href="/stix/campaign/">Campaign</a></li>
+<li><a href="/stix/course-of-action/">Course of Action</a></li>
+<li><a href="/stix/identity/">Identity</a></li>
+<li><a href="/stix/intrusion-set/">Intrusion Set</a></li>
+<li><a href="/stix/malware/">Malware</a></li>
+<li><a href="/stix/observed-data/">Observed Data</a></li>
+<li><a href="/stix/report/">Report</a></li>
+<li><a href="/stix/threat-actor/">Threat Actor</a></li>
+<li><a href="/stix/tool/">Tool</a></li>
+<li><a href="/stix/vulnerability/">Vulnerability</a></li>
+<li><a href="/stix/indicator/">Indicator</a></li>
+</ul>
+</li>
+
+<li class="dropdown">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">
+STIX Relationship Object<span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li><a href="/stix/relationship/">Relationship</a></li>
+<li><a href="/stix/sighting/">Sighting</a></li>
+</ul>
+</li>
+
+<li><a href="/timeline/">Timeline</a></li>
+<li><a href="/stix/matrix/">TTP Matrix</a></li>
+<li><a href="/stix/">Parser</a></li>
+</ul>
+
+<ul class="nav navbar-nav navbar-right">
+{% if not user.is_authenticated %}<li><a href="/account/login/?next={{request.path}}">Login</a></li>
+{% else %}
+<li class="dropdown">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">User: {{user}}
+<span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li><a href="/account/password_change/">Password Change</a></li>
+<li><a href="/account/two_factor/">2FA</a></li>
+<li><a href="/account/logout/?next={{request.path}}">Logout</a></li>
+{% if user.is_staff %}
+<li><a href="/admin/">Admin</a></li>
+<li><a href="/stix/all.json">Export All</a></li>
+<li><a href="/stix/masked-all.json">Export Masked</a></li>
+{% endif %}
+{% endif %}
+</ul>
+</div>
+</nav>
+{% endblock %}
+
+{% block message %}{% if messages %}<div class="col-md-12">
+<ul class="messages list-group">{% for message in messages %}
+<li{% if message.tags %} class="list-group-item list-group-item-{{ message.tags }}"{% endif %}>{{ message }}</li>
+{% endfor %}</ul>
+</div>{% endif %}{% endblock %}
+
+{% block container %}{% endblock %}
+</div><!--/.container-fluid-->
+</body>
+</html>

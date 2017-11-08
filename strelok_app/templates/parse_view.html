@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}<title>STIX Parser</title>{% endblock %}
+{% block datatableslib %}{% endblock %}
+{% block datetimepickerlib %}{% endblock %}
+{% block tablesortlib %}{% endblock %}
+{% block visjslib %}{% endblock %}
+{% block jquery %}
+<script>
+$(document).ready(
+    function(){
+        $("input#select_types").click(function(){
+            if($(this).prop("checked")){
+                $('ul#id_types :checkbox').prop('checked',true);
+            }else{
+                $('ul#id_types :checkbox').prop('checked',false);
+            };
+        });
+        $("input#select_relation").click(function(){
+            if($(this).prop("checked")){
+                $('ul#id_relation :checkbox').prop('checked',true);
+            }else{
+                $('ul#id_relation :checkbox').prop('checked',false);
+            };
+        });
+    }
+);
+</script>
+{% endblock%}
+{% block container %}
+{% block stixviz %}
+<div id="stix_parser" class="col-md-12">
+
+<div id="canvas-container" class="hidden">
+
+<div class="panel panel-default">
+<div class="panel-heading">
+<h1 id="header">Visualize</h1>
+</div>
+<div class="panel-body">
+<div id="canvas-wrapper"><svg id="canvas"></svg></div>
+<div id="legend" class="sidebar">
+<h2>Legend</h2>
+<ul id="legend-content"></ul>
+</div>
+<div id="selected" class="sidebar">
+<h2>Selected Node</h2>
+<div id="selection"></div>
+</div>
+
+</div><!--/#canvas-container-->
+</div></div></div>
+{% endblock %}
+
+{% block table %}
+<div id="tables" class="col-md-12">
+<div class="panel panel-default">
+<div class="panel-heading">STIX Parser</div>
+<div class="panel-body">
+<form method="post">{% csrf_token %}
+<div class="col-md-12">
+
+<div class="col-md-6"><label>Parse:</label>
+<input class="btn btn-sm" type="submit" name="parse_url" value="URLs">
+<input class="btn btn-sm" type="submit" name="parse_stix2" value="STIX2">
+<br>{{form.as_p}}
+</div>
+
+<div class="col-md-6">
+<label>Filter:</label>
+<div class="col-md-12">
+<div class="col-md-6" id="types_form">
+    <input type="checkbox" id="select_types" checked><label>types</label>{{tform.types}}
+</div>
+<div class="col-md-6" id="rel_form">
+    <input type="checkbox" id="select_relation" checked><label>relationship</label>{{tform.relation}}
+</div>
+
+</div></div>
+
+</div>
+
+</form>
+</div></div></div>
+{% endblock %}
+{% block stixvizlib%}
+<script type="text/javascript" src="/static/d3/d3.min.js"></script>
+<script type="text/javascript" src="/static/stixviz/stix2viz.js"></script>
+<script type="text/javascript" src="/static/stixviz/app.js"></script>
+{% endblock %}
+{% endblock %}
