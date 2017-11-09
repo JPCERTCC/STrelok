@@ -14,16 +14,22 @@ Application for STIX v2.0 objects management and analysis
 $ docker-compose up
 ```
 
-2. Execute following script to create DB. You need to create an admin account for the control panel in the final step.
+2. Execute following script to create DB. You need to create an admin account for the control panel in the final step. 
 
 ```
 $ sh initdb.sh
 ```
 
-3. Start up containers and connect to port 8000 of the docker host in web browser
+3. Start up containers and connect to port 8000 of the docker host in web browser. 
 
 ```
 $ docker-compose up
+```
+
+If you don't like to start server on 0.0.0.0, please add static IP address to "ports" in docker-compose.yml as follows:
+
+```
+      - "8000:8000" -> "127.0.0.1:8000:8000"
 ```
 
 ## Notes
