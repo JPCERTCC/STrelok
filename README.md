@@ -36,11 +36,11 @@ $ docker-compose up
 
 ### Top page
 
-![top](https://github.com/JPCERTCC/STrelok-Private/raw/images/top.PNG)
+![top](https://github.com/JPCERTCC/STrelok/raw/images/top.PNG)
 
 ### Timeline
 
-![timeline](https://github.com/JPCERTCC/STrelok-Private/raw/images/timeline.PNG)		
+![timeline](https://github.com/JPCERTCC/STrelok/raw/images/timeline.PNG)		
 
 For timeline, you need to create STIX objects: threat-actor, campaign, identity, sighting
 
@@ -52,7 +52,7 @@ STIX objects "report" also appears on the timeline. Create report and add object
 
 ### TTP Matrix
 
-![matix](https://github.com/JPCERTCC/STrelok-Private/raw/images/matrix.PNG)
+![matix](https://github.com/JPCERTCC/STrelok/raw/images/matrix.PNG)
 
 For TTP Matrix, you need to create STIX objects: threat-actor, campaign, malware or tool or attack-pattern
 
